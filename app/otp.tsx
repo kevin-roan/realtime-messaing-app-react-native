@@ -7,6 +7,7 @@ import {
   Platform,
   TouchableOpacity,
   TextInput,
+  Alert,
   ActivityIndicator,
   Keyboard,
   TouchableWithoutFeedback,
@@ -18,6 +19,11 @@ import Colors from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaskInput from "react-native-mask-input";
+import {
+  isClerkAPIResponseError,
+  useSignIn,
+  useSignUp,
+} from "@clerk/clerk-expo";
 
 const Otp = () => {
   const [isloading, setLoading] = useState(false);
@@ -26,6 +32,8 @@ const Otp = () => {
   const router = useRouter();
   const keyboardVerticalOffset = Platform.OS === "ios" ? 90 : 0;
   const { bottom } = useSafeAreaInsets();
+  const { signUp, setActive } = useSignUp();
+  const { signIn } = useSignIn();
 
   const openLink = () => {
     Linking.openURL("https://kevinroan.vercel.app");
@@ -33,10 +41,37 @@ const Otp = () => {
   const sendOTP = async () => {
     Keyboard.dismiss();
     setLoading(true);
-    setTimeout(() => {
-      setLoading(true);
+    // setTimeout(() => {
+    //   setLoading(true);
+    //   router.push(`/verify/${phoneNumber}`);
+    // }, 200);
+
+    try {
+      await signUp?.create({
+        phoneNumber,
+      });
+      await signUp?.preparePhoneNumberVerification();
+
       router.push(`/verify/${phoneNumber}`);
-    }, 200);
+    } catch (error) {
+      console.log(error:ErrorResponse.errors);
+      if (isClerkAPIResponseError(error)) {
+        if (error.errors[0].code === "form_identifier_exists") {
+          console.log("user exists");
+          await trySignIn();
+        } else if (error.errors[0].code === "form_param_format_invalid") {
+          console.log("Invalid phone number", error.errors[0].message);
+          setLoading(false);
+          Alert.alert(
+            "Enter a valid phone number with International Format",
+            error.errors[0].longMessage,
+          );
+        } else {
+          setLoading(false);
+          Alert.alert("Error", error.errors[0].message);
+        }
+      }
+    }
   };
   const trySignIn = async () => {};
   console.log("StyleSheet adbsolutefill object", StyleSheet.absoluteFillObject);
@@ -69,11 +104,8 @@ const Otp = () => {
               placeholder="+91 987 654 3210"
               autoFocus
               onChangeText={(masked, unmasked) => {
-                setPhoneNumber(masked); // you can use the unmasked value as well
-
-                // assuming you typed "9" all the way:
-                console.log(masked); // (99) 99999-9999
-                console.log(unmasked); // 99999999999
+                let withInternatinalCode = `+${unmasked}`;
+                setPhoneNumber(withInternatinalCode); // you can use the unmasked value as well
               }}
               mask={[
                 "(",

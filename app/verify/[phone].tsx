@@ -1,4 +1,5 @@
 import Colors from "@/constants/Colors";
+import { useSignIn, useSignUp } from "@clerk/clerk-expo";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -19,6 +20,9 @@ const CELL_COUNT = 6;
 
 const Page = () => {
   const [code, setCode] = useState("");
+
+  const { signUp, setActive } = useSignUp();
+  const { signIn } = useSignIn();
 
   const ref = useBlurOnFulfill({ value: code, cellCount: CELL_COUNT });
   const [props, getCellOnLayoutHandler] = useClearByFocusCell({
