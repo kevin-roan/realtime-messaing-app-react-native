@@ -35,8 +35,8 @@ const Otp = () => {
     setLoading(true);
     setTimeout(() => {
       setLoading(true);
-      router.push("otp");
-    }, 3000);
+      router.push(`/verify/${phoneNumber}`);
+    }, 200);
   };
   const trySignIn = async () => {};
   console.log("StyleSheet adbsolutefill object", StyleSheet.absoluteFillObject);
@@ -77,6 +77,7 @@ const Otp = () => {
               }}
               mask={[
                 "(",
+                "+",
                 /\d/,
                 /\d/,
                 ")",
@@ -86,7 +87,7 @@ const Otp = () => {
                 /\d/,
                 /\d/,
                 /\d/,
-                "-",
+                /\d/,
                 /\d/,
                 /\d/,
                 /\d/,
