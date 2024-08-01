@@ -13,7 +13,7 @@ import {
   TouchableWithoutFeedback,
   StatusBar,
 } from "react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import Colors from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
@@ -30,7 +30,6 @@ const Otp = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
 
   const router = useRouter();
-  const keyboardVerticalOffset = Platform.OS === "ios" ? 90 : 0;
   const { bottom } = useSafeAreaInsets();
   const { signUp, setActive } = useSignUp();
   const { signIn } = useSignIn();
@@ -54,10 +53,12 @@ const Otp = () => {
 
       router.push(`/verify/${phoneNumber}`);
     } catch (error) {
-      console.log(error:ErrorResponse.errors);
+      console.log(error.errors);
       if (isClerkAPIResponseError(error)) {
         if (error.errors[0].code === "form_identifier_exists") {
           console.log("user exists");
+          router.replace("(tabs)/settings");
+          // bellow function doesnot work  for now #TODO
           await trySignIn();
         } else if (error.errors[0].code === "form_param_format_invalid") {
           console.log("Invalid phone number", error.errors[0].message);
@@ -68,13 +69,33 @@ const Otp = () => {
           );
         } else {
           setLoading(false);
-          Alert.alert("Error", error.errors[0].message);
+          Alert.alert("Error unknown", error.errors[0].message);
         }
       }
     }
   };
-  const trySignIn = async () => {};
-  console.log("StyleSheet adbsolutefill object", StyleSheet.absoluteFillObject);
+  const trySignIn = async () => {
+    // this does not work TODO
+    const { supportedFirstFactors } = await signIn!.create({
+      identifier: phoneNumber,
+    });
+
+    const firstPhoneFactor: any = supportedFirstFactors.factor(
+      (factor: any) => {
+        return factor.strategy === "phone_code";
+      },
+    );
+
+    const { phoneNumberId } = firstPhoneFactor;
+
+    await signIn!.prepareFirstFactor({
+      strategy: "phone_code",
+      phoneNumberId,
+    });
+
+    router.push(`/verify/${phoneNumber}?signin=true`);
+    setLoading(false);
+  };
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }}>

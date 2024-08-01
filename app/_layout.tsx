@@ -7,6 +7,7 @@ import "react-native-reanimated";
 import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { View } from "react-native";
 import * as SecureStore from "expo-secure-store";
+import { StatusBar } from "expo-status-bar";
 
 const tokenCache = {
   async getToken(key: string) {
@@ -81,7 +82,7 @@ const InitialLayout = () => {
 
     if (isSignedIn && !inTabsGroup) {
       // if signed in push to chats screen (where chat screen is located in tabs group)
-      router.replace("/(tabs)/chats");
+      router.replace("/(tabs)/settings");
     } else if (!isSignedIn) {
       // if the user is not signed in bring her back to the root (initial screen )
       router.replace("/");
@@ -107,6 +108,12 @@ const InitialLayout = () => {
         options={{
           headerTitle: "Verify Your Phone Number",
           headerBackTitle: "Edit Phonenumber",
+        }}
+      />
+      <Stack.Screen
+        name="(tabs)"
+        options={{
+          headerShown: false,
         }}
       />
     </Stack>

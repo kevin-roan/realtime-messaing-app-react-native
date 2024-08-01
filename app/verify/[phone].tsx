@@ -1,10 +1,15 @@
 import Colors from "@/constants/Colors";
-import { useSignIn, useSignUp } from "@clerk/clerk-expo";
+import {
+  isClerkAPIResponseError,
+  useSignIn,
+  useSignUp,
+} from "@clerk/clerk-expo";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
+  Alert,
   StyleSheet,
   TouchableOpacity,
   Platform,
@@ -38,16 +43,77 @@ const Page = () => {
 
   useEffect(() => {
     if (code.length === 6) {
-      console.log("code", code);
       // TODO: Verify code
+
+      if (signin === "true") {
+        verifySign();
+      } else {
+        verifyCode();
+      }
     }
   }, [code]);
 
-  const verifyCode = async () => {};
+  const verifyCode = async () => {
+    try {
+      const signInAttempt = await signUp?.attemptPhoneNumberVerification({
+        code,
+      });
+      await setActive!({ session: singUp?.createdSessionId });
+    } catch (err) {
+      console.error("Error:", JSON.stringify(err, null, 2));
+      if (isClerkAPIResponseError(err)) {
+        Alert.alert("Error", err.errors[0].message);
+      }
+    }
+  };
 
-  const verifySign = async () => {};
+  const verifySign = async () => {
+    try {
+      await signIn.attemptFirstFactor({
+        strategy: "phone_code",
+        code,
+      });
+      await setActive!({ session: signIn!.createdSessionId });
+    } catch (error) {
+      console.error("Error: ", JSON.stringify(error, null, 2));
+      if (isClerkAPIResponseError(error)) {
+        Alert.alert("Error", error.errors[0].message);
+      }
+    }
+  };
 
-  const resendCode = async () => {};
+  const resendCode = async () => {
+    try {
+      if (signin === "true") {
+        const { supportedFirstFactors } = await signIn!.create({
+          identifier: phone,
+        });
+
+        const firstPhoneFactor: any = supportedFirstFactors.find(
+          (factor: any) => {
+            return factor.strategy === "phone_code";
+          },
+        );
+
+        const { phoneNumberId } = firstPhoneFactor;
+
+        await signIn!.prepareFirstFactor({
+          strategy: "phone_code",
+          phoneNumberId,
+        });
+      } else {
+        await signUp!.create({
+          phoneNumber: phone,
+        });
+        signUp!.preparePhoneNumberVerification();
+      }
+    } catch (err) {
+      console.log("error", JSON.stringify(err, null, 2));
+      if (isClerkAPIResponseError(err)) {
+        Alert.alert("Error", err.errors[0].message);
+      }
+    }
+  };
 
   return (
     <View style={styles.container}>
